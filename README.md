@@ -115,6 +115,31 @@ TM-manager/
 └── README.md                   # This file
 ```
 
+## ⚙️ Environment Variables
+
+Create a file `backend/config.env` with the following variables:
+
+```env
+PORT=5000
+FRONTEND_URL=http://localhost:5173
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret_key
+JWT_EXPIRES=7d
+COOKIE_EXPIRE=7
+
+# Optional: Email configuration (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_SERVICE=gmail
+SMTP_PORT=465
+SMTP_MAIL=your_email@gmail.com
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+FROM_NAME=Your Team Name
+FROM_EMAIL=your_email@gmail.com
+```
+
+> ⚠️ **Never commit your real secrets to GitHub.** The `backend/config.env` file is already added to `.gitignore`.
+
 ## 🚀 Getting Started
 
 ### Prerequisites

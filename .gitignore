@@ -19,6 +19,7 @@ build/
 .env
 .env.local
 .env.*.local
+backend/config.env
 
 # Editor directories and files
 .vscode/*
