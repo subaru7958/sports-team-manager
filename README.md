@@ -7,6 +7,16 @@ A comprehensive sports and academy management system for managing teams, coaches
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4.2.0-47A248)
 
+## 📷 Application Screenshots
+
+| Login Page | Dashboard |
+|------------|-----------|
+| ![Login Page](docs/screenshots/loginpage.png) | ![Dashboard](docs/screenshots/dashboard-tm.png) |
+
+| Groups | Schedules |
+|--------|-----------|
+| ![Groups](docs/screenshots/groups-tm.png) | ![Schedules](docs/screenshots/schedule-tm.png) |
+
 ## 📋 Overview
 
 TM-Manager is a full-stack web application designed to help sports academies and teams manage their day-to-day operations. It provides a complete solution for managing team identity, coaches, players, groups, training schedules, and events.
