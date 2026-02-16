@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0a47c2;
+  --color-background-light: #f5f6f8;
+  --color-background-dark: #101622;
+
+  --font-display: "Lexend", sans-serif;
+
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+@layer base {
+  body {
+    @apply min-h-screen bg-[--color-background-light] text-slate-900;
+    font-family: 'Lexend', sans-serif;
+  }
+}
+
+@layer components {
+  .form-input {
+    @apply flex w-full min-w-0 flex-1 rounded-lg h-14 px-4 text-base font-normal transition-all bg-white text-slate-900 border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary;
+  }
+
+  .form-input.small {
+    @apply h-10;
+  }
+
+  .form-input::placeholder {
+    @apply text-slate-400;
+  }
+
+  .discipline-card {
+    @apply relative border-2 border-slate-100 rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-all flex flex-col items-center gap-3 text-center bg-white;
+  }
+
+  .discipline-card.selected {
+    @apply border-primary bg-blue-50/50;
+  }
+}

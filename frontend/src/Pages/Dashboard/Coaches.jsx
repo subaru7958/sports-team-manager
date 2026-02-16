@@ -1,0 +1,309 @@
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../api/api";
+import Button from "../../components/Button";
+import CreateCoachModal from "../../components/CreateCoachModal";
+import EditCoachModal from "../../components/EditCoachModal";
+import CoachDetailsModal from "../../components/CoachDetailsModal";
+
+const Coaches = () => {
+    const { team } = useAuth();
+    const primaryColor = team?.primaryColor || "#13ecc8";
+    const [coaches, setCoaches] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedCoach, setSelectedCoach] = useState(null);
+    const [activeTab, setActiveTab] = useState("all");
+    const [searchQuery, setSearchQuery] = useState("");
+
+    useEffect(() => {
+        const fetchCoaches = async () => {
+            try {
+                const response = await api.get("/coaches/my");
+                if (response.data.success) {
+                    setCoaches(response.data.coaches);
+                }
+            } catch (err) {
+                console.error("Failed to fetch coaches", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCoaches();
+    }, []);
+
+    const handleCoachCreated = (newCoach) => {
+        setCoaches([...coaches, newCoach]);
+    };
+
+    const handleCoachUpdated = (updatedCoach) => {
+        setCoaches(coaches.map(c => c._id === updatedCoach._id ? updatedCoach : c));
+        if (selectedCoach?._id === updatedCoach._id) {
+            setSelectedCoach(updatedCoach);
+        }
+    };
+
+    const handleDeleteCoach = async (id) => {
+        if (!window.confirm("Are you sure you want to remove this staff member? This action cannot be undone.")) return;
+        try {
+            const response = await api.delete(`/coaches/${id}`);
+            if (response.data.success) {
+                setCoaches(coaches.filter(c => c._id !== id));
+            }
+        } catch (err) {
+            console.error("Failed to delete coach", err);
+        }
+    };
+
+    const getInitials = (name) => {
+        if (!name) return "--";
+        return name.split(' ').filter(n => n).map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    };
+
+    const getDisciplineIcon = (discipline) => {
+        const disc = discipline?.toLowerCase() || '';
+        if (disc.includes('foot')) return 'sports_soccer';
+        if (disc.includes('basket')) return 'sports_basketball';
+        if (disc.includes('volley')) return 'sports_volleyball';
+        if (disc.includes('tennis')) return 'sports_tennis';
+        if (disc.includes('swim')) return 'pool';
+        if (disc.includes('hand')) return 'sports_handball';
+        return 'sports_score';
+    };
+
+    const handleViewDetails = (coach) => {
+        setSelectedCoach(coach);
+        setIsDetailsModalOpen(true);
+    };
+
+    const handleOpenEdit = (coach) => {
+        setSelectedCoach(coach);
+        setIsEditModalOpen(true);
+    };
+
+    // Filtering logic
+    const filteredCoaches = activeTab === "all"
+        ? coaches
+        : coaches.filter(c => c.discipline?.toLowerCase() === activeTab.toLowerCase());
+
+    // Search filtering
+    const searchFilteredCoaches = searchQuery
+        ? filteredCoaches.filter(c => 
+            c.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.specialty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.discipline?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : filteredCoaches;
+
+    const disciplines = team?.disciplines || [];
+
+    return (
+        <div className="flex-1 flex flex-col w-full max-w-[1400px] mx-auto px-4 lg:px-10 py-5 font-display text-[#111817]">
+            {/* Breadcrumbs */}
+            <div className="flex flex-wrap gap-2 py-2">
+                <span className="text-[#618983] text-sm font-medium">Organization</span>
+                <span className="text-[#618983] text-sm font-medium">/</span>
+                <span className="text-[#111817] text-sm font-medium">Technical Staff</span>
+            </div>
+
+            {/* Page Heading */}
+            <div className="flex flex-wrap justify-between items-end gap-3 py-6">
+                <div className="flex min-w-72 flex-col gap-2">
+                    <h1 className="text-[#111817] text-4xl font-black leading-tight tracking-[-0.033em]">Technical Staff</h1>
+                    <p className="text-[#618983] text-base font-normal">Manage your organization's coaching and technical experts across all disciplines.</p>
+                </div>
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="flex items-center justify-center rounded-2xl h-14 px-8 text-[#111817] text-base font-bold transition-all hover:shadow-xl active:scale-95"
+                    style={{ backgroundColor: primaryColor }}
+                >
+                    <span className="material-symbols-outlined mr-2">person_add</span>
+                    Register Coach
+                </button>
+            </div>
+
+            {/* Discipline Tabs */}
+            <div className="pb-6 border-b border-slate-100">
+                <div className="flex gap-8 overflow-x-auto no-scrollbar">
+                    <button
+                        onClick={() => setActiveTab("all")}
+                        className={`flex items-center gap-2 border-b-[3px] pb-3 pt-4 transition-all ${activeTab === "all" ? "border-primary text-[#111817]" : "border-transparent text-[#618983] hover:text-[#111817]"}`}
+                        style={{ borderBottomColor: activeTab === "all" ? primaryColor : "transparent" }}
+                    >
+                        <span className="material-symbols-outlined text-xl">grid_view</span>
+                        <p className="text-sm font-bold tracking-[0.015em] whitespace-nowrap">All Staff</p>
+                    </button>
+                    {disciplines.map(d => (
+                        <button
+                            key={d}
+                            onClick={() => setActiveTab(d.toLowerCase())}
+                            className={`flex items-center gap-2 border-b-[3px] pb-3 pt-4 transition-all ${activeTab === d.toLowerCase() ? "border-primary text-[#111817]" : "border-transparent text-[#618983] hover:text-[#111817]"}`}
+                            style={{ borderBottomColor: activeTab === d.toLowerCase() ? primaryColor : "transparent" }}
+                        >
+                            <span className="material-symbols-outlined text-xl">{getDisciplineIcon(d)}</span>
+                            <p className="text-sm font-bold tracking-[0.015em] whitespace-nowrap capitalize">{d}</p>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="mt-6 mb-4">
+                <div className="relative max-w-md">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                    <input
+                        type="text"
+                        placeholder="Search coaches by name, specialty or discipline..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 bg-white text-sm font-medium outline-none focus:ring-2 focus:ring-offset-0"
+                        style={{ "--tw-ring-color": primaryColor + "30" }}
+                    />
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex-1 flex items-center justify-center py-20">
+                    <div className="w-12 h-12 border-4 border-slate-200 border-t-primary rounded-full animate-spin" style={{ borderTopColor: primaryColor }}></div>
+                </div>
+            ) : coaches.length > 0 ? (
+                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mt-6">
+                    {searchFilteredCoaches.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50/50">
+                                        <th className="px-6 py-5 text-xs font-black text-[#618983] uppercase tracking-widest border-b border-slate-100">Staff Member</th>
+                                        <th className="px-6 py-5 text-xs font-black text-[#618983] uppercase tracking-widest border-b border-slate-100 text-center">Discipline</th>
+                                        <th className="px-6 py-5 text-xs font-black text-[#618983] uppercase tracking-widest border-b border-slate-100">Role / Specialty</th>
+                                        <th className="px-6 py-5 text-xs font-black text-[#618983] uppercase tracking-widest border-b border-slate-100">Contact</th>
+                                        <th className="px-6 py-5 text-xs font-black text-[#618983] uppercase tracking-widest border-b border-slate-100 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {searchFilteredCoaches.map((coach) => (
+                                        <tr key={coach._id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="size-10 rounded-xl flex items-center justify-center text-[#111817] font-black text-sm shrink-0 shadow-sm overflow-hidden bg-slate-100" style={{ backgroundColor: coach.image ? 'white' : primaryColor }}>
+                                                        {coach.image ? (
+                                                            <img src={coach.image} alt={coach.fullName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            getInitials(coach.fullName)
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">{coach.fullName}</span>
+                                                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Coach ID: {coach._id.substring(18, 24)}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className="px-3 py-1.5 rounded-xl bg-white border border-slate-100 flex items-center gap-2 shadow-sm">
+                                                        <span className="material-symbols-outlined text-base" style={{ color: primaryColor }}>{getDisciplineIcon(coach.discipline)}</span>
+                                                        <span className="text-xs font-black capitalize">{coach.discipline}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-lg bg-slate-100 text-[#111817] text-xs font-black uppercase tracking-wider">
+                                                    {coach.specialty}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-bold text-slate-500">{coach.phone || '---'}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleViewDetails(coach)}
+                                                        className="h-9 px-4 rounded-xl bg-slate-100 text-slate-600 text-xs font-black hover:bg-slate-200 transition-all uppercase tracking-wider"
+                                                    >
+                                                        Details
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleOpenEdit(coach)}
+                                                        className="size-9 rounded-xl border border-slate-100 flex items-center justify-center text-slate-300 hover:text-primary hover:bg-primary/5 transition-all outline-none"
+                                                    >
+                                                        <span className="material-symbols-outlined text-lg">edit</span>
+                                                    </button>
+                                                    <button
+                                                        className="size-9 rounded-xl border border-slate-100 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all outline-none"
+                                                        onClick={() => handleDeleteCoach(coach._id)}
+                                                    >
+                                                        <span className="material-symbols-outlined text-lg">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="py-20 text-center">
+                            <div className="size-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="material-symbols-outlined text-3xl text-slate-300">search_off</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">No staff found for this discipline</h3>
+                            <p className="text-slate-500 text-sm">Try selecting a different filter or register a new coach.</p>
+                        </div>
+                    )}
+
+                    {/* Table Footer */}
+                    <div className="px-6 py-4 bg-slate-50/30 flex justify-between items-center text-xs text-slate-400 font-bold uppercase tracking-widest">
+                        <span>Showing {filteredCoaches.length} staff members</span>
+                        <div className="flex gap-4">
+                            <span className="flex items-center gap-1"><div className="size-2 rounded-full" style={{ backgroundColor: primaryColor }}></div> Active Profiles</span>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-[2.5rem] border border-slate-100 shadow-sm text-center max-w-2xl mx-auto my-10 animate-in fade-in zoom-in duration-500">
+                    <div className="size-24 rounded-full flex items-center justify-center mx-auto mb-8 relative" style={{ backgroundColor: `${primaryColor}15` }}>
+                        <div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ backgroundColor: primaryColor }}></div>
+                        <span className="material-symbols-outlined text-5xl relative z-10" style={{ color: primaryColor }}>safety_divider</span>
+                    </div>
+                    <h2 className="text-3xl font-black mb-4 leading-tight">Elite Staff Required</h2>
+                    <p className="text-slate-500 max-w-sm mx-auto mb-10 font-medium leading-relaxed">
+                        Start building your coaching team to manage training sessions and tactical development.
+                    </p>
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="px-10 h-16 rounded-2xl text-[#111817] font-extrabold transition-all shadow-xl active:scale-95 flex items-center gap-3 text-lg hover:shadow-primary/20"
+                        style={{ backgroundColor: primaryColor }}
+                    >
+                        <span className="material-symbols-outlined font-bold">person_add</span>
+                        Register First Coach
+                    </button>
+                </div>
+            )}
+
+            <CreateCoachModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCoachCreated={handleCoachCreated}
+            />
+
+            <EditCoachModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                coach={selectedCoach}
+                onCoachUpdated={handleCoachUpdated}
+            />
+
+            <CoachDetailsModal
+                isOpen={isDetailsModalOpen}
+                onClose={() => setIsDetailsModalOpen(false)}
+                coach={selectedCoach}
+                onEditTrigger={() => {
+                    setIsDetailsModalOpen(false);
+                    setIsEditModalOpen(true);
+                }}
+            />
+        </div>
+    );
+};
+
+export default Coaches;
